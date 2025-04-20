@@ -1,0 +1,5 @@
+port 8080
+scale 1.5
+name "Serv1"
+env "prod"
+pattern "user_42"
