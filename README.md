@@ -14,6 +14,10 @@ A Go library for parsing, validating, and hot‑reloading [KDL](https://kdl.dev/
 - **Custom rules**: register your own validation logic.
 - **Hot reload**: watch file changes and automatically reload/validate.
 
+## Requirements
+
+- **Go** 1.20 or later
+
 ## Dependencies
 
 - [github.com/sblinch/kdl-go](https://github.com/sblinch/kdl-go) — used under the hood for parsing and unmarshaling KDL documents
