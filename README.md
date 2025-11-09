@@ -1,3 +1,5 @@
+[![CI](https://github.com/ykhdr/kdl-config/actions/workflows/ci.yml/badge.svg)](https://github.com/ykhdr/kdl-config/actions/workflows/ci.yml)
+
 # KDL config
 
 A Go library for parsing, validating, and hot‑reloading [KDL](https://kdl.dev/) configuration files.
