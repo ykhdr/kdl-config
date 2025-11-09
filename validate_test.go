@@ -3,23 +3,21 @@ package kdlconfig
 
 import (
 	"fmt"
-	"github.com/ykhdr/kdl-config/internal/reflectutils"
-	"github.com/ykhdr/kdl-config/rules"
 	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"github.com/ykhdr/kdl-config/internal/reflectutils"
+	"github.com/ykhdr/kdl-config/rules"
 )
-
-func setup() {
-	rules.RegisterDefaultRules()
-}
 
 type basicStruct struct {
 	Value int    `validate:"required,min=1,max=10"`
 	Name  string `validate:"len=5"`
 	Env   string `validate:"oneof=dev|prod"`
 }
+
+func setup() { rules.RegisterDefaultRules() }
 
 func TestValidateStruct_Basic_Success(t *testing.T) {
 	setup()
@@ -126,7 +124,7 @@ type oneOfIntStruct struct {
 func TestValidateStruct_OneOfTypeMismatch(t *testing.T) {
 	setup()
 	cfg := &oneOfIntStruct{A: 2}
-	// oneof поддерживает только строки
+	// oneof supports only strings
 	err := validateStruct(cfg)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "supports only string")
@@ -163,4 +161,51 @@ func TestValidateStruct_CustomRule(t *testing.T) {
 	err := validateStruct(cfg)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "not odd")
+}
+
+type nestedInner struct {
+	Name string `validate:"required"`
+}
+
+type nestedOuter struct {
+	Inner nestedInner
+}
+
+type nestedPtrOuter struct {
+	Inner *nestedInner
+}
+
+func TestValidateStruct_NestedStructRequired(t *testing.T) {
+	setup()
+	cfg := &nestedOuter{Inner: nestedInner{}}
+	err := validateStruct(cfg)
+	// Expect an error: nested required inside inner struct should be detected.
+	require.Error(t, err, "expected nested required to be detected")
+}
+
+func TestValidateStruct_NestedPtrStructRequired(t *testing.T) {
+	setup()
+	cfg := &nestedPtrOuter{Inner: &nestedInner{}}
+	err := validateStruct(cfg)
+	require.Error(t, err, "expected error because Name is empty and marked required")
+}
+
+type sliceRequired struct {
+	Items []int `validate:"required"`
+}
+
+func TestValidateStruct_SliceRequired(t *testing.T) {
+	setup()
+	cfgNil := &sliceRequired{}                 // nil slice
+	cfgEmpty := &sliceRequired{Items: []int{}} // empty slice
+	cfgFilled := &sliceRequired{Items: []int{1}}
+
+	errNil := validateStruct(cfgNil)
+	require.Error(t, errNil, "nil slice should not pass required")
+
+	errEmpty := validateStruct(cfgEmpty)
+	require.Error(t, errEmpty, "empty slice should not pass required")
+
+	errFilled := validateStruct(cfgFilled)
+	require.NoError(t, errFilled, "slice with elements should pass required")
 }

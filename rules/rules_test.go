@@ -2,9 +2,11 @@ package rules
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/require"
 	"reflect"
+	"regexp"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestGetRule(t *testing.T) {
@@ -136,4 +138,71 @@ func TestRegisterRule(t *testing.T) {
 			})
 		})
 	}
+}
+
+// Basic unit tests for individual rules
+func TestRequiredRule_Basics(t *testing.T) {
+	r := &requiredRule{}
+
+	// string
+	var s string
+	require.Error(t, r.Validate(reflect.ValueOf(s), reflect.StructField{}))
+	s = "x"
+	require.NoError(t, r.Validate(reflect.ValueOf(s), reflect.StructField{}))
+
+	// slice
+	var sl []int
+	require.Error(t, r.Validate(reflect.ValueOf(sl), reflect.StructField{}))
+	sl = []int{}
+	require.Error(t, r.Validate(reflect.ValueOf(sl), reflect.StructField{}))
+	sl = []int{1}
+	require.NoError(t, r.Validate(reflect.ValueOf(sl), reflect.StructField{}))
+
+	// map
+	var m map[string]int
+	require.Error(t, r.Validate(reflect.ValueOf(m), reflect.StructField{}))
+	m = map[string]int{}
+	require.Error(t, r.Validate(reflect.ValueOf(m), reflect.StructField{}))
+	m["a"] = 1
+	require.NoError(t, r.Validate(reflect.ValueOf(m), reflect.StructField{}))
+
+	// pointer
+	var p *int
+	require.Error(t, r.Validate(reflect.ValueOf(p), reflect.StructField{}))
+	x := 10
+	p = &x
+	require.NoError(t, r.Validate(reflect.ValueOf(p), reflect.StructField{}))
+}
+
+func TestLenRule_UnsupportedType(t *testing.T) {
+	r := &lenRule{Length: 1}
+	require.Error(t, r.Validate(reflect.ValueOf(123), reflect.StructField{}))
+}
+
+func TestPatternRule_NonString(t *testing.T) {
+	r := &patternRule{Re: regexp.MustCompile("^x$")}
+	require.Error(t, r.Validate(reflect.ValueOf(123), reflect.StructField{}))
+}
+
+func TestOneOfRule_Basics(t *testing.T) {
+	r := &oneOfRule{Options: []string{"a", "b"}}
+	// success
+	require.NoError(t, r.Validate(reflect.ValueOf("a"), reflect.StructField{}))
+	// failure
+	require.Error(t, r.Validate(reflect.ValueOf("c"), reflect.StructField{}))
+	// wrong type
+	require.Error(t, r.Validate(reflect.ValueOf(1), reflect.StructField{}))
+}
+
+func TestMinMaxRule_Floats(t *testing.T) {
+	min := &minRule{Min: 1.5}
+	max := &maxRule{Max: 3.0}
+
+	require.Error(t, min.Validate(reflect.ValueOf(1.0), reflect.StructField{}))
+	require.NoError(t, min.Validate(reflect.ValueOf(1.5), reflect.StructField{}))
+	require.NoError(t, min.Validate(reflect.ValueOf(2.0), reflect.StructField{}))
+
+	require.NoError(t, max.Validate(reflect.ValueOf(3.0), reflect.StructField{}))
+	require.NoError(t, max.Validate(reflect.ValueOf(2.5), reflect.StructField{}))
+	require.Error(t, max.Validate(reflect.ValueOf(3.5), reflect.StructField{}))
 }

@@ -2,9 +2,10 @@ package kdlconfig
 
 import (
 	"fmt"
-	"github.com/ykhdr/kdl-config/rules"
 	"reflect"
 	"strings"
+
+	"github.com/ykhdr/kdl-config/rules"
 )
 
 // ValidationError describes a single validation error.
@@ -42,31 +43,73 @@ func validateStruct(cfg any) error {
 	if v.Kind() != reflect.Ptr || v.IsNil() {
 		return fmt.Errorf("validateStruct: expected pointer to struct, got %T", cfg)
 	}
-	v = v.Elem()
-	if v.Kind() != reflect.Struct {
+	if v.Elem().Kind() != reflect.Struct {
 		return fmt.Errorf("validateStruct: expected struct, got %T", v.Interface())
 	}
 
+	visited := make(map[uintptr]bool)
+	// do not mark root struct address as visited for struct-field recursion
+	if err := validateStructFields(v, visited); err != nil {
+		return err
+	}
+	return nil
+}
+
+// validateStructFields validates a pointer to struct with cycle detection.
+func validateStructFields(pv reflect.Value, visited map[uintptr]bool) error {
+	// pv must be a non-nil pointer to struct
+	if pv.Kind() != reflect.Ptr || pv.IsNil() || pv.Elem().Kind() != reflect.Struct {
+		return nil
+	}
+
 	var allErrs ValidationErrors
+	v := pv.Elem()
 	t := v.Type()
 
 	for i := 0; i < v.NumField(); i++ {
 		sf := t.Field(i)
-		rawTag := sf.Tag.Get("validate")
-		if rawTag == "" {
-			continue
-		}
 		fv := v.Field(i)
 
-		for _, rawRule := range strings.Split(rawTag, ",") {
-			rawRule = strings.TrimSpace(rawRule)
-			rule, err := rules.GetRule(rawRule)
-			if err != nil {
-				allErrs = append(allErrs, ValidationError{Field: sf.Name, Msg: err.Error()})
-				continue
+		// Recursive descent into nested structs while avoiding cycles
+		switch fv.Kind() {
+		case reflect.Struct:
+			// Always recurse into embedded struct value; no cycle risk without pointers.
+			addr := fv.Addr()
+			if err := validateStructFields(addr, visited); err != nil {
+				if verrs, ok := err.(ValidationErrors); ok {
+					allErrs = append(allErrs, verrs...)
+				} else {
+					allErrs = append(allErrs, ValidationError{Field: sf.Name, Msg: err.Error()})
+				}
 			}
-			if err := rule.Validate(fv, sf); err != nil {
-				allErrs = append(allErrs, ValidationError{Field: sf.Name, Msg: err.Error()})
+		case reflect.Ptr:
+			if !fv.IsNil() && fv.Elem().Kind() == reflect.Struct {
+				ptr := fv.Pointer()
+				if !visited[ptr] {
+					visited[ptr] = true
+					if err := validateStructFields(fv, visited); err != nil {
+						if verrs, ok := err.(ValidationErrors); ok {
+							allErrs = append(allErrs, verrs...)
+						} else {
+							allErrs = append(allErrs, ValidationError{Field: sf.Name, Msg: err.Error()})
+						}
+					}
+				}
+			}
+		}
+
+		rawTag := sf.Tag.Get("validate")
+		if rawTag != "" {
+			for _, rawRule := range strings.Split(rawTag, ",") {
+				rawRule = strings.TrimSpace(rawRule)
+				rule, err := rules.GetRule(rawRule)
+				if err != nil {
+					allErrs = append(allErrs, ValidationError{Field: sf.Name, Msg: err.Error()})
+					continue
+				}
+				if err := rule.Validate(fv, sf); err != nil {
+					allErrs = append(allErrs, ValidationError{Field: sf.Name, Msg: err.Error()})
+				}
 			}
 		}
 	}
