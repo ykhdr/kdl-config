@@ -19,34 +19,11 @@ jobs:
   unit-tests:
     name: Go ${{ matrix.go-version }} on ubuntu-latest
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        go-version: [ 'stable', 'oldstable' ]
-
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Go
-        uses: actions/setup-go@v5
+      - name: Unit tests
+        uses: ./.github/actions/unit-tests
         with:
-          go-version: ${{ matrix.go-version }}
-          cache: true
-
-      - name: Show Go environment
-        run: go env
-
-      - name: Download dependencies
-        run: go mod download
-
-      - name: Run unit tests (race + coverage)
-        run: go test ./... -race -coverprofile=coverage.out -covermode=atomic -v
-
-      - name: Upload coverage artifact
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-${{ matrix.go-version }}
-          path: coverage.out
-          if-no-files-found: ignore
+          working-directory: '.'

@@ -1,0 +1,31 @@
+name: unit-tests
+author: ykhdr
+description: go unit-tests
+inputs:
+  working-directory:
+    description: 'Working Directory'
+    required: false
+    default: '.'
+runs:
+  using: composite
+  steps:
+    - name: Checkout
+      id: checkout
+      uses: actions/checkout@v4
+
+    - name: Setup Golang with cache
+      uses: magnetikonline/action-golang-cache@v5
+      with:
+        go-version-file: ${{inputs.working-directory}}/go.mod
+
+    - name: Run unit tests
+      shell: bash
+      run: go test ./... -race -v -shuffle on -coverprofile=coverage.out -covermode=atomic -timeout 10m
+
+    - name: Upload coverage artifact
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage
+        path: coverage.out
+        if-no-files-found: ignore
