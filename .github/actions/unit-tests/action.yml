@@ -9,17 +9,14 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Checkout
-      id: checkout
-      uses: actions/checkout@v4
-
     - name: Setup Golang with cache
       uses: magnetikonline/action-golang-cache@v5
       with:
-        go-version-file: ${{inputs.working-directory}}/go.mod
+        go-version-file: ${{ inputs.working-directory }}/go.mod
 
     - name: Run unit tests
       shell: bash
+      working-directory: ${{ inputs.working-directory }}  # semantics: honor input working directory
       run: go test ./... -race -v -shuffle on -coverprofile=coverage.out -covermode=atomic -timeout 10m
 
     - name: Upload coverage artifact
@@ -27,5 +24,5 @@ runs:
       uses: actions/upload-artifact@v4
       with:
         name: coverage
-        path: coverage.out
+        path: ${{ inputs.working-directory }}/coverage.out
         if-no-files-found: ignore

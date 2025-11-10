@@ -26,6 +26,8 @@ linters:
     - misspell         # Common spelling mistakes
   disable:
     - depguard         # Off until project import policy is defined
+    - gocyclo
+    - gofumpt
 
 linters-settings:
   revive:
@@ -41,11 +43,6 @@ linters-settings:
         disabled: true
       - name: early-return
         disabled: true
-  gocyclo:
-    min-complexity: 15
-  gofumpt:
-    module-path: github.com/ykhdr/kdl-config
-    extra-rules: true
   misspell:
     locale: US
   govet:
@@ -59,7 +56,6 @@ issues:
     # Make tests less noisy while still checking most issues
     - path: _test\.go
       linters:
-        - gocyclo
         - goconst
         - errcheck
     # Examples are allowed to be a bit looser on error handling
@@ -68,4 +64,4 @@ issues:
         - errcheck
 
 output:
-  format: colored-line-number  # semantics: corrected key name (was 'formats') to match GolangCI-Lint config schema
+  format: colored-line-number

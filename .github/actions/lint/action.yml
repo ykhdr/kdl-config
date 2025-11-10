@@ -9,9 +9,6 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-
     - name: Setup Golang with cache
       uses: magnetikonline/action-golang-cache@v5
       with:
@@ -22,3 +19,4 @@ runs:
       with:
         version: v1.59
         args: --timeout=3m
+        working-directory: ${{ inputs.working-directory }}
