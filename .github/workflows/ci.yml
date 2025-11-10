@@ -8,7 +8,7 @@ on:
 permissions:
   contents: read
   actions: read
-  pull-requests: write  # semantics: allow actions to comment on PRs (lint results later)
+  pull-requests: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -19,6 +19,9 @@ jobs:
     name: GolangCI-Lint (ubuntu-latest)
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Lint
         uses: ./.github/actions/lint
         with:
@@ -27,7 +30,7 @@ jobs:
   unit-tests:
     name: Go unit tests (ubuntu-latest)
     runs-on: ubuntu-latest
-    needs: [lint]  # semantics: run tests only if lint job finishes (success or failure)
+    needs: [lint]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
