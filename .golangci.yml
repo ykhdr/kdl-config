@@ -1,0 +1,71 @@
+# GolangCI-Lint configuration for kdl-config
+# Keep it pragmatic: enable a solid baseline of correctness and style linters,
+# tune a few to reduce noise, and keep defaults for the rest.
+
+run:
+  timeout: 3m
+  tests: true           # Lint tests too (except where excluded below)
+  modules-download-mode: readonly
+
+linters:
+  enable:
+    - govet            # Std vet checks
+    - staticcheck      # Comprehensive static analysis
+    - gosimple         # Sugg. simplifications
+    - ineffassign      # Detect ineffectual assignments
+    - typecheck        # Type checking
+    - errcheck         # Check unhandled errors
+    - unused           # Unused vars/funcs
+    - revive           # Style & best practices (golint successor)
+    - goconst          # Suggest constant extraction
+    - gofumpt          # Stricter gofmt
+    - gocritic         # Various correctness hints
+    - usestdlibvars    # Prefer std lib vars (time, os, etc.)
+    - unconvert        # Remove unnecessary type conversions
+    - misspell         # Common spelling mistakes
+  disable:
+    - depguard         # Off until project import policy is defined
+
+linters-settings:
+  revive:
+    rules:
+      - name: var-naming
+      - name: import-shadowing
+      - name: receiver-naming
+      - name: redundant-import-alias
+      # Be less prescriptive to avoid churn:
+      - name: unused-receiver
+        disabled: true
+      - name: indent-error-flow
+        disabled: true
+      - name: early-return
+        disabled: true
+  gocyclo:
+    min-complexity: 15
+  gofumpt:
+    module-path: github.com/ykhdr/kdl-config
+    extra-rules: true
+  misspell:
+    locale: US
+  govet:
+    disable:
+      - fieldalignment  # Can be noisy; enable later if desired
+
+issues:
+  max-issues-per-linter: 0   # Do not cap; show everything
+  max-same-issues: 0         # Do not cap
+  exclude-rules:
+    # Make tests less noisy while still checking most issues
+    - path: _test\.go
+      linters:
+        - gocyclo
+        - goconst
+        - errcheck
+    # Examples are allowed to be a bit looser on error handling
+    - path: ^examples/
+      linters:
+        - errcheck
+
+output:
+  format: colored-line-number
+
