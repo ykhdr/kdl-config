@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   unit-tests:
-    name: Go ${{ matrix.go-version }} on ubuntu-latest
+    name: Go unit tests on ubuntu-latest
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
