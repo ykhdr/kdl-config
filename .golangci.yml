@@ -68,5 +68,4 @@ issues:
         - errcheck
 
 output:
-  formats: colored-line-number
-
+  format: colored-line-number  # semantics: corrected key name (was 'formats') to match GolangCI-Lint config schema

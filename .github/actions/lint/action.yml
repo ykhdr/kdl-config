@@ -1,0 +1,40 @@
+name: golangci-lint
+author: ykhdr
+description: run golangci-lint
+inputs:
+  working-directory:
+    description: 'Working Directory'
+    required: false
+    default: '.'
+runs:
+  using: composite
+  steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup Golang with cache
+      uses: magnetikonline/action-golang-cache@v5
+      with:
+        go-version-file: ${{ inputs.working-directory }}/go.mod
+
+    - name: Install golangci-lint
+      shell: bash
+      run: |
+        curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.59.0
+
+    - name: Run golangci-lint
+      shell: bash
+      run: golangci-lint run --timeout=3m
+
+    - name: Upload lint report (JSON)
+      if: always()
+      shell: bash
+      run: golangci-lint run --out-format json > lint-report.json || true
+
+    - name: Upload lint artifact  # semantics: preserve full JSON for later annotation/bot comments
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: lint-report
+        path: lint-report.json
+        if-no-files-found: ignore
