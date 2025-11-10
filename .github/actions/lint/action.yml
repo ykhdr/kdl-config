@@ -1,0 +1,22 @@
+name: golangci-lint
+author: ykhdr
+description: run golangci-lint
+inputs:
+  working-directory:
+    description: 'Working Directory'
+    required: false
+    default: '.'
+runs:
+  using: composite
+  steps:
+    - name: Setup Golang with cache
+      uses: magnetikonline/action-golang-cache@v5
+      with:
+        go-version-file: ${{ inputs.working-directory }}/go.mod
+
+    - name: GolangCI-Lint
+      uses: golangci/golangci-lint-action@v5
+      with:
+        version: v1.59
+        args: --timeout=3m
+        working-directory: ${{ inputs.working-directory }}
