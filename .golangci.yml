@@ -2,6 +2,8 @@
 # Keep it pragmatic: enable a solid baseline of correctness and style linters,
 # tune a few to reduce noise, and keep defaults for the rest.
 
+version: '2'
+
 run:
   timeout: 3m
   tests: true           # Lint tests too (except where excluded below)
@@ -18,7 +20,6 @@ linters:
     - unused           # Unused vars/funcs
     - revive           # Style & best practices (golint successor)
     - goconst          # Suggest constant extraction
-    - gofumpt          # Stricter gofmt
     - gocritic         # Various correctness hints
     - usestdlibvars    # Prefer std lib vars (time, os, etc.)
     - unconvert        # Remove unnecessary type conversions
@@ -67,5 +68,5 @@ issues:
         - errcheck
 
 output:
-  format: colored-line-number
+  formats: colored-line-number
 
